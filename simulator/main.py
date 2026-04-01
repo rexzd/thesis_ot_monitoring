@@ -43,8 +43,23 @@ async def main():
 
     print("OPC UA Server is running at opc.tcp://0.0.0.0:4840/800xa/server/")
 
+    # Deterministic scenario cycles for experiments.
+    controller_cycle = ["RUNNING", "RUNNING", "STOPPED", "ERROR"]
+    communication_cycle = ["OK", "OK", "DEGRADED", "OK"]
+    alarm_cycle = [False, False, True, False]
+    tick = 0
+
     async with server:
         while True:
+            controller_state = controller_state.update_value(controller_cycle[tick % len(controller_cycle)])
+            communication_state = communication_state.update_value(communication_cycle[tick % len(communication_cycle)])
+            alarm_state = alarm_state.update_value(alarm_cycle[tick % len(alarm_cycle)])
+
+            await controller_status.write_value(controller_state.to_json())
+            await communication_status.write_value(communication_state.to_json())
+            await alarm_active.write_value(alarm_state.to_json())
+
+            tick += 1
             await asyncio.sleep(1)
 
 if __name__ == "__main__":
