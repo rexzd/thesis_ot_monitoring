@@ -1,5 +1,4 @@
 import asyncio
-from datetime import datetime
 from asyncua import Server
 from signal_state import SignalState
 
@@ -11,27 +10,31 @@ async def main():
     # Set the endpoint for the server
     server.set_endpoint("opc.tcp://0.0.0.0:4840/800xa/server/")
 
-    # Test create one signal with SignalState
-    now = datetime.now().timestamp()
-    controller_state = SignalState(
+    # Create initial state for each signal.
+    controller_state = SignalState.create(
         name="controller_status",
         value="RUNNING",
         data_type="string",
-        quality="GOOD",
-        source_ts=now,
-        publish_ts=now,
-        seq=1
+    )
+    communication_state = SignalState.create(
+        name="communication_status",
+        value="OK",
+        data_type="string",
+    )
+    alarm_state = SignalState.create(
+        name="alarm_active",
+        value=False,
+        data_type="bool",
     )
 
     # Create simulator object
     node = server.get_objects_node()
     simulator = await node.add_object(0, "simulator")
 
-    # Add signals to the simulator
-    # Test still publish as before but using the SignalState value
-    controller_status = await simulator.add_variable(0, "controller_status", controller_state.value)
-    communication_status = await simulator.add_variable(0, "communication_status", "OK")
-    alarm_active = await simulator.add_variable(0, "alarm_active", False)
+    # Publish full SignalState envelopes as JSON string payloads.
+    controller_status = await simulator.add_variable(0, "controller_status", controller_state.to_json())
+    communication_status = await simulator.add_variable(0, "communication_status", communication_state.to_json())
+    alarm_active = await simulator.add_variable(0, "alarm_active", alarm_state.to_json())
 
     # Allow clients to read and write the variables
     await controller_status.set_writable()

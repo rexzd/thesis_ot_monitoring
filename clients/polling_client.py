@@ -1,4 +1,5 @@
 import asyncio
+import json
 from asyncua import Client
 
 async def main():
@@ -14,11 +15,20 @@ async def main():
 
         # Poll the variables every 2 seconds for 5 iterations
         for i in range(5):
-            cs = await controller_status.read_value()
-            comm = await communication_status.read_value()
-            alarm = await alarm_active.read_value()
+            cs_raw = await controller_status.read_value()
+            comm_raw = await communication_status.read_value()
+            alarm_raw = await alarm_active.read_value()
 
-            print(f"[{i}] controller_status={cs}, communication_status={comm}, alarm_active={alarm}")
+            cs = json.loads(cs_raw)
+            comm = json.loads(comm_raw)
+            alarm = json.loads(alarm_raw)
+
+            print(
+                f"[{i}] "
+                f"controller_status={cs['value']} (seq={cs['seq']}, quality={cs['quality']}), "
+                f"communication_status={comm['value']} (seq={comm['seq']}, quality={comm['quality']}), "
+                f"alarm_active={alarm['value']} (seq={alarm['seq']}, quality={alarm['quality']})"
+            )
             await asyncio.sleep(2)
 
 if __name__ == "__main__":
