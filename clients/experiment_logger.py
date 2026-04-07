@@ -1,4 +1,5 @@
 import csv
+import json
 import os
 from typing import Optional, Any
 from datetime import datetime
@@ -37,13 +38,22 @@ class ExperimentLogger:
         if self.file_handle is not None:
             self.file_handle.flush()
 
+    @staticmethod
+    def _serialize_value(value: Any) -> str:
+        """Serialize arbitrary observation values for CSV storage."""
+        if value is None:
+            return ""
+        if isinstance(value, (str, int, float, bool)):
+            return str(value)
+        return json.dumps(value, separators=(",", ":"), sort_keys=True)
+
     def log_observation(
         self,
         signal: str,
-        value: str | bool | float,
+        value: Any,
         seq: int,
-        source_ts: float,
-        publish_ts: float,
+        source_ts: float | None,
+        publish_ts: float | None,
         recv_ts: float,
     ) -> None:
         """Log a single observation to CSV."""
@@ -54,10 +64,10 @@ class ExperimentLogger:
             {
                 "recv_ts": f"{recv_ts:.6f}",
                 "signal": signal,
-                "value": value,
+                "value": self._serialize_value(value),
                 "seq": seq,
-                "source_ts": f"{source_ts:.6f}",
-                "publish_ts": f"{publish_ts:.6f}",
+                "source_ts": "" if source_ts is None else f"{source_ts:.6f}",
+                "publish_ts": "" if publish_ts is None else f"{publish_ts:.6f}",
             }
         )
         if self.file_handle is not None:
