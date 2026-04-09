@@ -109,3 +109,55 @@ python3 -m clients.polling_client
 * `.env` can be modified to test different configurations.
 
 ---
+
+## 11. Reproducible Experiment Suite
+
+Run a predefined suite with deterministic scenario settings, automatic manifests,
+and per-run analysis output:
+
+```bash
+source .venv/bin/activate
+python scripts/run_experiment_suite.py \
+  --suite scripts/suites/thesis_baseline.json \
+  --results-root results \
+  --seed 42
+```
+
+What this produces:
+
+* `results/suites/<suite_name>_<timestamp>/suite_manifest.json`
+* `results/suites/<suite_name>_<timestamp>/suite_summary.csv`
+* `results/suites/<suite_name>_<timestamp>/runs/<scenario>_repXX/...`
+  * Raw CSV logs for polling + subscription
+  * `run_manifest.json`
+  * Analysis output (`analysis_*/metrics_summary.json` + plots)
+
+Reproducibility notes:
+
+* Scenario definitions are JSON files under `scripts/suites/`.
+* The exact suite configuration is copied to
+  `suite_config_snapshot.json` for each run.
+* `--seed` makes randomized mode ordering reproducible.
+
+---
+
+## 12. Generate Suite Comparison Figures
+
+After a suite run is complete, generate thesis-ready comparison PNGs from the
+suite outputs:
+
+```bash
+source .venv/bin/activate
+python scripts/plot_suite_comparisons.py \
+  --suite-dir results/suites/thesis_baseline_20260408_130024 \
+  --output-dir docs/figures
+```
+
+Generated files:
+
+* `docs/figures/latency_comparison.png`
+* `docs/figures/throughput_comparison.png`
+* `docs/figures/host_load.png`
+* `docs/figures/data_quality.png`
+
+---

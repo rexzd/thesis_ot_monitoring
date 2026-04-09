@@ -1,6 +1,23 @@
 import asyncio
+import os
 from asyncua import Server
 from signal_state import SignalState
+
+
+def _simulator_update_interval_seconds() -> float:
+    """Read deterministic simulator update interval from environment."""
+    value = os.getenv("SIMULATOR_UPDATE_INTERVAL_SECONDS", "1.0")
+    try:
+        interval = float(value)
+    except ValueError as exc:
+        raise ValueError(
+            "SIMULATOR_UPDATE_INTERVAL_SECONDS must be a float value"
+        ) from exc
+
+    if interval <= 0:
+        raise ValueError("SIMULATOR_UPDATE_INTERVAL_SECONDS must be > 0")
+
+    return interval
 
 async def main():
     # Create an OPC UA server
@@ -43,6 +60,9 @@ async def main():
 
     print("OPC UA Server is running at opc.tcp://0.0.0.0:4840/800xa/server/")
 
+    update_interval_seconds = _simulator_update_interval_seconds()
+    print(f"Simulator update interval: {update_interval_seconds:.3f}s")
+
     # Deterministic scenario cycles for experiments.
     controller_cycle = ["RUNNING", "RUNNING", "STOPPED", "ERROR"]
     communication_cycle = ["OK", "OK", "DEGRADED", "OK"]
@@ -60,7 +80,7 @@ async def main():
             await alarm_active.write_value(alarm_state.to_json())
 
             tick += 1
-            await asyncio.sleep(1)
+            await asyncio.sleep(update_interval_seconds)
 
 if __name__ == "__main__":
     asyncio.run(main())

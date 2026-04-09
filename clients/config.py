@@ -94,7 +94,7 @@ class ExperimentConfig:
     """Experiment runtime parameters."""
 
     duration_seconds: int
-    poll_interval_seconds: int
+    poll_interval_seconds: float
     subscription_publishing_interval_ms: int
     results_dir: str
     log_to_console: bool
@@ -110,11 +110,15 @@ class ExperimentConfig:
 
         try:
             duration_seconds = int(duration_str)
-            poll_interval_seconds = int(poll_interval_str)
+            poll_interval_seconds = float(poll_interval_str)
             subscription_publishing_interval_ms = int(subscription_interval_str)
         except ValueError as exc:
             raise ValueError(
-                f"Experiment timing values must be integers: {exc}"
+                "Experiment timing values must be numeric: "
+                "EXPERIMENT_DURATION_SECONDS (int), "
+                "POLL_INTERVAL_SECONDS (float), "
+                "SUBSCRIPTION_PUBLISHING_INTERVAL_MS (int). "
+                f"Details: {exc}"
             ) from exc
 
         if duration_seconds <= 0 or poll_interval_seconds <= 0:

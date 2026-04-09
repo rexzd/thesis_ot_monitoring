@@ -1,0 +1,35 @@
+{
+  "suite_name": "thesis_baseline",
+  "scenarios": [
+    {
+      "name": "baseline_60s",
+      "repetitions": 3,
+      "duration_seconds": 60,
+      "poll_interval_seconds": 1,
+      "subscription_publishing_interval_ms": 1000,
+      "simulator_update_interval_seconds": 1.0,
+      "warmup_seconds": 2.0,
+      "mode_order": "alternating"
+    },
+    {
+      "name": "faster_polling_60s",
+      "repetitions": 3,
+      "duration_seconds": 60,
+      "poll_interval_seconds": 0.5,
+      "subscription_publishing_interval_ms": 500,
+      "simulator_update_interval_seconds": 0.5,
+      "warmup_seconds": 2.0,
+      "mode_order": "alternating"
+    },
+    {
+      "name": "stress_updates_120s",
+      "repetitions": 2,
+      "duration_seconds": 120,
+      "poll_interval_seconds": 0.2,
+      "subscription_publishing_interval_ms": 200,
+      "simulator_update_interval_seconds": 0.2,
+      "warmup_seconds": 2.0,
+      "mode_order": "alternating"
+    }
+  ]
+}

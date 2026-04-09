@@ -25,14 +25,12 @@ async def main() -> None:
     """Run polling experiment using configured transport and signals."""
     config = Config.from_env()
 
-    # Initialize OPC UA client
     client = Client(config.transport.endpoint)
     adapter = OpcUaPollingAdapter(
         opcua_client=client,
         root_path=config.transport.root_path,
     )
 
-    # Define logical signals using configuration
     signals = [
         SignalDefinition(
             logical_name="controller_status",
@@ -54,57 +52,58 @@ async def main() -> None:
         ),
     ]
 
-    logger = ExperimentLogger("polling_client")
+    logger = ExperimentLogger(
+        "polling_client",
+        output_dir=config.experiment.results_dir,
+    )
     start_time = time.time()
     poll_count = 0
 
-    async with client:
-        while time.time() - start_time < config.experiment.duration_seconds:
-            elapsed = time.time() - start_time
+    try:
+        async with client:
+            while time.time() - start_time < config.experiment.duration_seconds:
+                elapsed = time.time() - start_time
 
-            # Read all signals using the adapter
-            observations = []
-            for signal in signals:
-                try:
-                    obs = await adapter.read(signal)
-                    observations.append(obs)
-                except Exception as exc:
-                    print(f"ERROR reading {signal.logical_name}: {exc}")
-                    continue
+                observations = []
+                for signal in signals:
+                    try:
+                        obs = await adapter.read(signal)
+                        observations.append(obs)
+                    except Exception as exc:
+                        print(f"ERROR reading {signal.logical_name}: {exc}")
+                        continue
 
-            # Print and log results
-            if config.experiment.log_to_console:
-                separator = "=" * 48
-                print(f"poll_iteration: {poll_count} (elapsed: {elapsed:.1f}s)")
-                print("-" * 48)
-
-            for obs in observations:
                 if config.experiment.log_to_console:
-                    print_observation(obs)
+                    separator = "=" * 48
+                    print(f"poll_iteration: {poll_count} (elapsed: {elapsed:.1f}s)")
                     print("-" * 48)
 
-                logger.log_observation(
-                    signal=obs.signal,
-                    value=obs.value,
-                    seq=obs.seq,
-                    source_ts=obs.source_ts,
-                    publish_ts=obs.publish_ts,
-                    recv_ts=obs.recv_ts,
+                for obs in observations:
+                    if config.experiment.log_to_console:
+                        print_observation(obs)
+                        print("-" * 48)
+
+                    logger.log_observation(
+                        signal=obs.signal,
+                        value=obs.value,
+                        seq=obs.seq,
+                        source_ts=obs.source_ts,
+                        publish_ts=obs.publish_ts,
+                        recv_ts=obs.recv_ts,
+                    )
+
+                if config.experiment.log_to_console:
+                    print(separator)
+
+                poll_count += 1
+
+                time_until_next_poll = (
+                    config.experiment.poll_interval_seconds - (time.time() - start_time - elapsed)
                 )
-
-            if config.experiment.log_to_console:
-                print(separator)
-
-            poll_count += 1
-
-            # Sleep until next poll or end of experiment, whichever comes first
-            time_until_next_poll = (
-                config.experiment.poll_interval_seconds - (time.time() - start_time - elapsed)
-            )
-            if time_until_next_poll > 0:
-                await asyncio.sleep(time_until_next_poll)
-
-    logger.close()
+                if time_until_next_poll > 0:
+                    await asyncio.sleep(time_until_next_poll)
+    finally:
+        logger.close()
 
 
 if __name__ == "__main__":
