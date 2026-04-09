@@ -83,9 +83,9 @@ class SignalAddressConfig:
             )
 
         return cls(
-            controller_status=controller_status or "",
-            communication_status=communication_status or "",
-            alarm_active=alarm_active or "",
+            controller_status=controller_status,
+            communication_status=communication_status,
+            alarm_active=alarm_active,
         )
 
 
